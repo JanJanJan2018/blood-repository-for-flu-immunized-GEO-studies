@@ -1,0 +1,773 @@
+---
+title: "genecards data grab"
+author: "Janis Corona"
+date: "7/30/2020"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+
+This is a script that can work in combination with another function I made in a separate post, that returns the fold change on gene expression samples, by returning a list of 25 top genes for a protein such as 'androgen' from genecards.org. That function is named find25genes() and has one character argument of the protein you want the top 25 genes associated with. Then another function that will return the Entrez, Genecards, and UniProtKB gene summaries for each gene in a separate function getGeneSummaries(gene,protein) with two character arguments for the gene and protein. The tables will be combined if you use the separate functions after running each of the previous functions, getProteinGenes() and getGeneSummaries(), where the argument is a character argument of the name of the protein to read them in and combine the header and gene data, this will return the table to the screen but won't read it in, but will give the file name to read in. Or go into the directory and add the header to the table yourself. This was done this way to alter the script later to combine the gene summaries to all the genes and a table that each gene is appended to with the summaries. 
+
+Note that knitr doesn't read in the webpage, but it works fine within Rstudio. Some bugs with the rvest package or knitr. The other html webpages like Indeed.com work with knitr and rvest, not sure why this website doesn't work with both rvest and knitr.
+
+```{r}
+library(rvest)
+library(lubridate)
+library(dplyr)
+
+```
+ 
+```{r}
+Gene_Path <- './gene scrapes'
+```
+ 
+This next chunk of code will erase your data if you already have it stored.
+```{r,eval=FALSE}
+if (dir.exists(Gene_Path)){
+  unlink(Gene_Path, recursive=TRUE)
+  dir.create(Gene_Path)
+} else {
+  dir.create(Gene_Path)
+}
+```
+
+
+This function will return a table and header as separate csv files for the top 25 genes that genecards.org lists for a protein searched. Such as 'estrogen' or 'androgen' or even 'protein.'
+```{r}
+find25genes <- function(protein){
+  
+  url <- 'https://www.genecards.org/Search/Keyword?queryString=protein'
+   
+  protein <- as.character(protein)
+  protein <- tolower(protein)
+  protein <- gsub(' ','%20',protein)
+  
+  url <- as.character(url)
+  url <- gsub('protein',protein, url)
+  
+  webpage <- read_html(url,encoding = "UTF-8")
+  
+  protein_html <- html_nodes(webpage,'.symbol-col a')
+  protein1 <- html_text(protein_html)
+  
+  Protein <- as.data.frame(protein1)
+  colnames(Protein) <- 'proteinType'
+  Protein$proteinType <- as.character(paste(Protein$proteinType))
+  Protein$proteinType <- gsub('\n','',Protein$proteinType)
+  
+  
+  date <- as.data.frame(rep(date(),length(Protein$proteinType)))
+  colnames(date) <- 'todaysDate'
+  
+  protein2 <- gsub('%20','-',protein)
+
+  proteinName <- as.data.frame(rep(protein2,length(Protein$proteinType)))
+  colnames(proteinName) <- 'proteinSearched'
+  
+  tableProtein <- cbind(Protein,proteinName,date)
+  
+  setwd(Gene_Path)
+  
+
+  write.table(tableProtein, 
+              paste(protein2,".csv",sep=''), append=TRUE,
+              col.names=FALSE, sep=",", quote=TRUE,qmethod="double",
+              row.names=FALSE)
+  names <- colnames(tableProtein)
+  write.csv(names,paste('tableProteinHeader_',protein2,'.csv',sep=''),row.names=FALSE)
+  
+  setwd('../')
+ 
+  
+  
+}
+```
+
+
+In Knitr there is an error that prevents using rvest to scrape the web:
+  - Quitting from lines 92-93 (geneCardsDataGrab2.Rmd) 
+Error in open.connection(x, "rb") : HTTP error 403.
+Calls: <Anonymous> ... eval -> find25genes -> read_html -> read_html.default
+
+Execution halted
+
+```{r,eval=FALSE}
+find25genes('estrogen')
+```
+
+Function to combine the data with the header and return the table for the 25 genes collected on the protein searched in genecards.org with the find25genes().
+```{r}
+getProteinGenes <- function(protein){
+  protein <- as.character(protein)
+  protein <- tolower(protein)
+  protein <- gsub(' ','-',protein)
+  table <- read.csv(paste(Gene_Path,'/',protein,'.csv',sep=''),sep=',',
+                    header=F,na.strings=c('',' ','NA'), stringsAsFactors = F)
+  header <- read.csv(paste(Gene_Path,'/tableProteinHeader_',protein,'.csv',sep=''),
+                     sep=',', header=T, na.strings=c('',' ','NA'), stringsAsFactors = F)
+  names <- header$x
+  colnames(table) <- names
+  fileName <- paste('Top25',protein,'s.csv',sep='')
+  write.csv(table, fileName, row.names=FALSE)
+  return(list(table,fileName))
+}
+
+```
+
+```{r,eval=FALSE}
+getProteinGenes('estrogen')
+```
+
+
+This next function will get the gene summaries for one of the genes you get from the previous function and enter in as the first argument, and the second argument is the protein entered to get the 25 genes with the find25genes().
+```{r}
+getSummaries <- function(gene,protein){
+  url <- 'https://www.genecards.org/cgi-bin/carddisp.pl?gene=GENE&keywords=protein'
+   
+  protein <- as.character(protein)
+  protein <- tolower(protein)
+  protein <- gsub(' ',',',protein)
+  gene <- as.character(gene)
+  gene <- tolower(gene)
+  
+  url <- as.character(url)
+  url <- gsub('GENE',gene,url)
+  url <- gsub('protein',protein, url)
+
+  webpage <- read_html(url,encoding = "UTF-8")
+  
+  Entrez_html <- html_nodes(webpage, '.gc-section-header+ .gc-subsection p')
+  Entrez <- html_text(Entrez_html) 
+
+  GeneCards_html <- html_nodes(webpage, '.gc-subsection-header+ p')
+  GeneCards <- html_text(GeneCards_html) 
+
+  UniProt_html <- html_nodes(webpage, '#summaries li:nth-child(1) div')
+  UniProtKB <- html_text(UniProt_html) 
+
+  Entrez0 <- ifelse(length(Entrez)==0, 'no summary',as.character(paste(Entrez)))
+  Entrez1 <- as.data.frame(Entrez0)
+  colnames(Entrez1) <- 'EntrezSummary'
+  
+  GeneCards0 <- ifelse(length(GeneCards)==0,'no summary',
+                       as.character(paste(GeneCards)))
+  GeneCards1 <- as.data.frame(GeneCards0)
+  colnames(GeneCards1) <- 'GeneCardsSummary'
+  
+  UniProtKB0 <- ifelse(length(UniProtKB)==0,'no summary',
+                       as.character(paste(UniProtKB)))
+  UniProtKB1 <- as.data.frame(UniProtKB0)
+  colnames(UniProtKB1) <- 'UniProtKB_Summary'
+  
+  Entrez1$EntrezSummary <- as.character(paste(Entrez1$EntrezSummary))
+  Entrez1$EntrezSummary <- gsub('\n','',Entrez1$EntrezSummary)
+
+  GeneCards1$GeneCardsSummary <- as.character(paste(GeneCards1$GeneCardsSummary))
+  GeneCards1$GeneCardsSummary <- gsub('\n','',GeneCards1$GeneCardsSummary)
+
+  UniProtKB1$UniProtKB_Summary <- as.character(paste(UniProtKB1$UniProtKB_Summary))
+  UniProtKB1$UniProtKB_Summary <- gsub('\n','',UniProtKB1$UniProtKB_Summary)
+  
+  date <- as.data.frame(rep(date(),length(Entrez1$EntrezSummary)))
+  colnames(date) <- 'todaysDate'
+    
+  protein2 <- gsub(',','-',protein)
+
+  proteinName <- as.data.frame(rep(protein2,length(Entrez1$EntrezSummary)))
+  colnames(proteinName) <- 'proteinSearched'
+  
+  gene <- as.data.frame(rep(toupper(gene),length(Entrez1$EntrezSummary)))
+  colnames(gene) <- 'gene'
+  
+  tableProtein <- cbind(proteinName,gene,Entrez1,GeneCards1,UniProtKB1,date)
+  
+  setwd(Gene_Path)
+  
+
+  write.table(tableProtein, 
+              paste(protein2,"summary.csv",sep=''), append=TRUE,
+              col.names=FALSE, sep=",", quote=TRUE,qmethod="double",
+              row.names=FALSE)
+  names <- colnames(tableProtein)
+  write.csv(names,paste('geneHeader_summary_',protein2,'.csv',sep=''),row.names=FALSE)
+  
+  setwd('../')
+ return(gene)
+}
+
+
+```
+
+
+```{r,eval=FALSE}
+getSummaries('TP53','estrogen')
+```
+
+
+This function reads in the gene summaries, entrez,genecards, and uniprotKB for the protein data collected from the getSummaries().
+```{r}
+getGeneSummaries <- function(protein){
+  protein <- as.character(protein)
+  protein <- tolower(protein)
+  protein <- gsub(' ','-',protein)
+  
+  table <- read.csv(paste(Gene_Path,'/',protein,'summary.csv',sep=''),
+                    sep=',',header=F,na.strings=c('',' ','NA'), stringsAsFactors = F)
+  
+  header <- read.csv(paste(Gene_Path,'/geneHeader_summary_',protein,'.csv',sep=''),
+                     sep=',', header=T, na.strings=c('',' ','NA'), stringsAsFactors = F)
+  names <- header$x
+  colnames(table) <- names
+
+  fileName <- paste('proteinGeneSummaries_',protein,'.csv',sep='')
+  write.csv(table, fileName, row.names=FALSE)
+  return(list(table,fileName))
+}
+
+```
+
+
+
+
+```{r,eval=FALSE}
+getGeneSummaries('estrogen')
+```
+
+***
+
+
+Lets take a look at that script published earlier in the month:
+
+
+files located at: https://github.com/JanJanJan2018/Uterine-Fibroid-Beadchip-Genotypes-Analysis
+
+These files are from https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE593
+and https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GPL96
+Note that there are only 5 samples of each class of uterine leiomyoma (UL) or nonUL
+all the gene related information was obtained from genecards.org
+
+Gene expression in a cell sample of tissue can mean the cell is creating more proteins needed in the body that are needed to maintain its living functions or are being enhanced or reduced or modified due to external factors such as environment, chemical, radiation, health disturbances like a viral infections.
+
+"Several steps in the gene expression process may be modulated, including the transcription, RNA splicing, translation, and post-translational modification of a protein. Gene regulation gives the cell control over structure and function, and is the basis for cellular differentiation, morphogenesis and the versatility and adaptability of any organism."
+{Gene expression - Wikipedia, en.wikipedia.org/wiki/Gene_expression}
+
+This study is done as a quick look into genes expressed by microarray sheets that have 1 or more array cells for the same gene when collected. Each gene can be measured in each sample depending on how many times it is seen in that microarray design in the lab. For more information on how these genes were collected and measured for the study obtained at the link above to visit the National Center for Bioinformatics Information (NCBI) for the GSE593 study in the Gene Expression Omnibus (GEO).
+
+
+Lets build our tables by reading them in for the ULs and nonULs.
+```{r}
+ul <- read.delim('UL_GSE593_GPL96.csv', sep=',', header=TRUE, comment.char='#',
+                 na.strings=c('',' ','NA'), stringsAsFactors = TRUE)
+
+non_ul <- read.delim('nonUL_GSE593_GPL96.csv', sep=',', header=TRUE, comment.char='#',
+                 na.strings=c('',' ','NA'), stringsAsFactors = TRUE)
+
+```
+
+```{r}
+head(ul)
+```
+
+
+```{r}
+colnames(ul)
+```
+
+Lets select only the samples and the gene symbol columns.
+```{r}
+UL <- ul[,c(6,8:12)]
+nonUL <- non_ul[,c(6,8:12)]
+
+```
+
+Next, we will split the gene symbol column that has multiple entries into the first three entries as lists to add to our tables and pull from
+```{r}
+ulList <- as.character(UL$Gene.Symbol)
+list <- strsplit(ulList,split=' /// ')
+first <- lapply(list, '[',1)
+second <- lapply(list, '[',2)
+third <- lapply(list, '[',3)
+
+UL$first <- as.character(first)
+UL$second <- as.character(second)
+UL$third <- as.character(third)
+
+nonulList <- as.character(nonUL$Gene.Symbol)
+list2 <- strsplit(nonulList,split=' /// ')
+first <- lapply(list2, '[',1)
+second <- lapply(list2, '[',2)
+third <- lapply(list2, '[',3)
+
+nonUL$first <- as.character(first)
+nonUL$second <- as.character(second)
+nonUL$third <- as.character(third)
+```
+
+Next, we will build the function to grab the gene by its gene symbol and return the fold change of the UL to nonUL ratio from the means and medians of our total genes across all five samples.
+This function is modified to write the information to a table for the UL and nonUL information.
+Make sure the files aren't in this folder or write to a separate folder.
+```{r}
+if (dir.exists('./UL and nonUL foldchange tables')){
+  unlink('./UL and nonUL foldchange tables', recursive=TRUE)
+  dir.create('./UL and nonUL foldchange tables')
+} else {
+  dir.create('./UL and nonUL foldchange tables')
+}
+
+
+```
+
+```{r}
+getMeanMedian <- function(gene){
+  gene <- as.character(paste(gene))
+  gene0_ul <- UL[grep(gene,UL$Gene.Symbol),]
+  gene0_nonul <- nonUL[grep(gene,UL$Gene.Symbol),]
+  
+  sub_ul <- subset(gene0_ul, gene0_ul$Gene.Symbol==gene |
+                     gene0_ul$first==gene |
+                     gene0_ul$third==gene |
+                     gene0_ul$second==gene)
+  
+  sub_nonul <- subset(gene0_nonul, gene0_nonul$Gene.Symbol==gene|
+                     gene0_nonul$first==gene |
+                     gene0_nonul$third==gene |
+                     gene0_nonul$second==gene)
+    
+  gene1_UL <- sub_ul[,2:6]
+  gene1_nonUL <- sub_nonul[,2:6]
+  
+  gene1_UL$mean <- apply(gene1_UL,1,mean)
+  gene1_UL$median <- apply(gene1_UL,1,median)
+  gene1_nonUL$mean <- apply(gene1_nonUL,1,mean)
+  gene1_nonUL$median <- apply(gene1_nonUL,1,median)
+  
+  gene1_UL$FoldChange_mean <- gene1_UL$mean/gene1_nonUL$mean
+  gene1_UL$FoldChange_median <- gene1_UL$median/gene1_nonUL$median
+  
+  geneMeans <- gene1_UL$FoldChange_mean
+  
+  geneMedians <- gene1_UL$FoldChange_median
+  
+  
+  print('The foldchage of UL means to nonUL means is:')
+  print(geneMeans)
+  
+  print('The foldchage of UL medians to nonUL medians is:')
+  print(geneMedians)
+  
+  colnames(gene1_UL) <- paste(colnames(gene1_UL), '_UL')
+  colnames(gene1_nonUL) <- paste(colnames(gene1_nonUL), '_nonUL')
+  
+  setwd('./UL and nonUL foldchange tables')
+  
+  write.table(gene1_UL[2:length(gene1_UL$median),], "allGenesUL.csv", append=TRUE, 
+              col.names=FALSE, sep=",",
+              row.names=TRUE)
+  UL_names <- colnames(gene1_UL)
+  write.csv(UL_names,'header_UL_names.csv',row.names=FALSE)
+
+  write.table(gene1_nonUL[2:length(gene1_nonUL$median),], "allGenesNonUL.csv", append=TRUE, 
+              col.names=FALSE, sep=",",
+              row.names=TRUE)
+  nonUL_names <- colnames(gene1_nonUL)
+  
+  write.csv(nonUL_names,'header_nonUL_names.csv', row.names=FALSE)
+  
+  setwd('../')
+  
+  return(list(gene1_UL,gene1_nonUL))
+}
+
+```
+
+Lets look at the iron gene expression of transferrin in UL compared to nonUL
+```{r}
+getMeanMedian("TF")
+```
+
+
+Now that we have a function to get the top genes for a protein, in this case 'tumor,' we can look up other genes related to 'tumor' such as 'TF' and get the summaries without having to visit the site genecards.org and enter in each gene.Lets try it now.
+
+Lets look at the top 25 genes for 'tumor' and then get the summaries.
+```{r,eval=FALSE}
+find25genes('tumor')
+```
+
+Print out the top 25 genes for the protein searched.
+```{r,eval=FALSE}
+getProteinGenes('tumor')
+```
+
+Grab the gene summaries for a particular gene and the protein interested in.
+```{r,eval=FALSE}
+getSummaries('TP53','tumor')
+```
+
+Print the results for one of the genes and the protein searched.
+```{r,eval=FALSE}
+getGeneSummaries('tumor')
+```
+
+Now lets look at how this gene does in UL tissue compared to non-UL tissue as far as fold change goes, with the ration of gene expression in UL/non-UL samples as a median and mean.
+```{r}
+getMeanMedian('TP53')
+```
+It looks like the gene TP53 is expressed much more in the uterine leiomyoma, which is a tumor. This makes sense.
+
+Lets use a different protein as double word search in genecards.org, 'hair loss' to be exact.
+```{r,eval=FALSE}
+find25genes('hair loss')
+```
+
+
+```{r,eval=FALSE}
+getProteinGenes('hair loss')
+```
+
+
+```{r,eval=FALSE}
+getSummaries('GJB2','hair loss')
+```
+
+
+```{r,eval=FALSE}
+getGeneSummaries('hair loss')
+```
+
+To extract the genes:
+- find25genes(protein) will grab the 25 genes associated with the protein from web
+- getProteinGenes(protein) will print the genes associated with the protein
+- getSummaries(gene, protein) will grab the gene protein summaries from web
+-getGeneSummaries(protein) will print the gene summary of protein gene
+
+The getMeanMedian(gene) will get the mean and median values for all instances of the gene in two samples being compared for pathogenesis/disease/control/treatment/etc
+
+Lets modify this getMeanMedian(gene) function to take any data table with the gene symbol and the samples for that class and the other data table not of that class to get the mean and median fold change values for diseased/non-diseased values for a specific data table of varying samples involving blood tissue gene expression values.
+This [data](https://github.com/JanJanJan2018/Alzheimer-Brain-Blood-Samples/blob/master/Dracula.csv) was prepared in an earlier project.
+```{r}
+dracula <- read.csv('Dracula.csv', sep=',', header=T, na.strings=c('',' ','NA'),
+                    stringsAsFactors = F)
+dim(dracula)
+colnames(dracula)
+```
+
+Lets rename the X column to 'Gene.Symbol' in our new data table.
+```{r}
+colnames(dracula)[1] <- 'Gene.Symbol'
+head(colnames(dracula))
+```
+Lets also make a data table of the non-immunized flu healthy control samples and those immunized flu samples that are from 1 day and 7 days after immunization to compare.
+```{r}
+FluImz_1day <- dracula[,c(1,150:152)]
+FluImz_7day <- dracula[,c(1,156:158)]
+head(FluImz_1day)
+```
+
+```{r}
+head(FluImz_7day)
+```
+
+```{r}
+healthy_noFluImz <- dracula[,c(1,132:137)]
+head(healthy_noFluImz)
+```
+
+
+```{r}
+getMeanMedianFlu1 <- function(gene){
+  gene <- as.character(paste(gene))
+  gene0_ul <- FluImz_1day[grep(gene,FluImz_1day$Gene.Symbol),]
+  gene0_nonul <- healthy_noFluImz[grep(gene,healthy_noFluImz$Gene.Symbol),]
+  
+  sub_ul <- subset(gene0_ul, gene0_ul$Gene.Symbol==gene )
+
+  sub_nonul <- subset(gene0_nonul, gene0_nonul$Gene.Symbol==gene)
+
+  gene1_UL <- sub_ul[,2:4]
+  gene1_nonUL <- sub_nonul[,2:7]
+  
+  gene1_UL$mean <- apply(gene1_UL,1,mean)
+  gene1_UL$median <- apply(gene1_UL,1,median)
+  gene1_nonUL$mean <- apply(gene1_nonUL,1,mean)
+  gene1_nonUL$median <- apply(gene1_nonUL,1,median)
+  
+  gene1_UL$FoldChange_mean <- gene1_UL$mean/gene1_nonUL$mean
+  gene1_UL$FoldChange_median <- gene1_UL$median/gene1_nonUL$median
+  
+  geneMeans <- gene1_UL$FoldChange_mean
+  
+  geneMedians <- gene1_UL$FoldChange_median
+  
+  
+  print('The foldchage of flu immunized after 1 day means to heathy non-immunized flu means is:')
+  print(geneMeans)
+  
+  print('The foldchage of flu immunized after 1 day medians to non-immunized flu medians is:')
+  print(geneMedians)
+  
+  colnames(gene1_UL) <- paste(colnames(gene1_UL), '_flu_1day')
+  colnames(gene1_nonUL) <- paste(colnames(gene1_nonUL), '_healthyNonImmz')
+  
+
+  write.table(gene1_UL[2:length(gene1_UL$median),], "allFluImz1day.csv", append=TRUE, 
+              col.names=FALSE, sep=",",
+              row.names=TRUE)
+  UL_names <- colnames(gene1_UL)
+  write.csv(UL_names,'header_allFluImz1day.csv',row.names=FALSE)
+
+  write.table(gene1_nonUL[2:length(gene1_nonUL$median),], "allhealthyNonImzFlu.csv", append=TRUE, 
+              col.names=FALSE, sep=",",
+              row.names=TRUE)
+  nonUL_names <- colnames(gene1_nonUL)
+  
+  write.csv(nonUL_names,'header_allhealthyNonImzFlu.csv', row.names=FALSE)
+  
+
+  return(list(gene1_UL,gene1_nonUL))
+}
+
+```
+
+```{r,eval=FALSE}
+find25genes('immunity')
+getProteinGenes('immunity')
+```
+
+I already saw that RAG1 wasn't in our data table of 12845 genes, so we will use IL10, the next listed gene for 'immunity.'
+```{r, eval=FALSE}
+getSummaries('IL10','immunity')
+getGeneSummaries('immunity')
+```
+
+```{r}
+getMeanMedianFlu1('IL10')
+```
+
+From the above, we can see that after 1 day of immunizations for the flu virus compared to healthy and non-immunized blood samples, that there is an overall decline in gene expression for IL10, which our gene summaries says is:
+```{r}
+immSumm <- read.csv('proteinGeneSummaries_immunity.csv', sep=',', header=T)
+head(immSumm)
+immSumm[2,3]
+```
+
+The immunity gene IL10 was appended to the previous gene, RAG1 that had no entry in our data table. 
+
+Now lets create a function that does this for the flu immunized samples after 7 days.
+
+```{r}
+getMeanMedianFlu7 <- function(gene){
+  gene <- as.character(paste(gene))
+  gene0_ul <- FluImz_7day[grep(gene,FluImz_7day$Gene.Symbol),]
+  gene0_nonul <- healthy_noFluImz[grep(gene,healthy_noFluImz$Gene.Symbol),]
+  
+  sub_ul <- subset(gene0_ul, gene0_ul$Gene.Symbol==gene )
+
+  sub_nonul <- subset(gene0_nonul, gene0_nonul$Gene.Symbol==gene)
+
+  gene1_UL <- sub_ul[,2:4]
+  gene1_nonUL <- sub_nonul[,2:7]
+  
+  gene1_UL$mean <- apply(gene1_UL,1,mean)
+  gene1_UL$median <- apply(gene1_UL,1,median)
+  gene1_nonUL$mean <- apply(gene1_nonUL,1,mean)
+  gene1_nonUL$median <- apply(gene1_nonUL,1,median)
+  
+  gene1_UL$FoldChange_mean <- gene1_UL$mean/gene1_nonUL$mean
+  gene1_UL$FoldChange_median <- gene1_UL$median/gene1_nonUL$median
+  
+  geneMeans <- gene1_UL$FoldChange_mean
+  
+  geneMedians <- gene1_UL$FoldChange_median
+  
+  
+  print('The foldchage of flu immunized after 7 days means to heathy non-immunized flu means is:')
+  print(geneMeans)
+  
+  print('The foldchage of flu immunized after 7 days medians to non-immunized flu medians is:')
+  print(geneMedians)
+  
+  colnames(gene1_UL) <- paste(colnames(gene1_UL), '_flu_7day')
+  colnames(gene1_nonUL) <- paste(colnames(gene1_nonUL), '_healthyNonImmz')
+  
+
+  write.table(gene1_UL[2:length(gene1_UL$median),], "allFluImz7day.csv", append=TRUE, 
+              col.names=FALSE, sep=",",
+              row.names=TRUE)
+  UL_names <- colnames(gene1_UL)
+  write.csv(UL_names,'header_allFluImz7day.csv',row.names=FALSE)
+
+  write.table(gene1_nonUL[2:length(gene1_nonUL$median),], "allhealthyNonImzFlu.csv", append=TRUE, 
+              col.names=FALSE, sep=",",
+              row.names=TRUE)
+  nonUL_names <- colnames(gene1_nonUL)
+  
+  write.csv(nonUL_names,'header_allhealthyNonImzFlu.csv', row.names=FALSE)
+  
+
+  return(list(gene1_UL,gene1_nonUL))
+}
+
+```
+
+Lets see the gene expression values across samples of immunizations after 7 days for the flu.
+```{r}
+getMeanMedianFlu7('IL10')
+```
+After 7 days the IL10 gene expression increased more than after 1 day of immunizations when compared to the identical non-immunized flu healthy samples.
+
+***
+
+Out of curiosity what are the most expressed genes in fold change from the treated to control states for the flu samples after 1 and 7 days? Lets find out.
+```{r}
+flu7 <- FluImz_7day %>% group_by(Gene.Symbol) %>% summarise_at(vars(Flu.Immunized.Only.Day.7:Flu.Immunized.Only.Day.7.2),mean)
+
+flu7DF <- as.data.frame(flu7)
+colnames(flu7DF) <- c('Gene.Symbol','Flu7_sample1','Flu7_sample2','Flu7_sample3')
+row.names(flu7DF) <- flu7DF$Gene.Symbol
+flu7DF <- flu7DF[,-1]
+flu7DF$Flu7_mean <- apply(flu7DF,1,mean)
+head(flu7DF)
+```
+
+
+```{r}
+flu1 <- FluImz_1day %>% group_by(Gene.Symbol) %>% summarise_at(vars(Flu.Immunized.Only.Day.1:Flu.Immunized.Only.Day.1.2),mean)
+
+flu1DF <- as.data.frame(flu1)
+colnames(flu1DF) <- c('Gene.Symbol','flu1_sample1','flu1_sample2','flu1_sample3')
+row.names(flu1DF) <- flu1DF$Gene.Symbol
+flu1DF <- flu1DF[,-1]
+flu1DF$Flu1_mean <- apply(flu1DF,1,mean)
+head(flu1DF)
+```
+
+```{r}
+healthy <- healthy_noFluImz %>% group_by(Gene.Symbol) %>% summarise_at(vars(Flu.non.immunized.healthy:Flu.non.immunized.healthy.5),mean)
+
+healthyDF <- as.data.frame(healthy)
+colnames(healthyDF) <- c('Gene.Symbol','healthy_sample1','healthy_sample2','healthy_sample3',
+                         'healthy_sample4', 'healthy_sample5','healthy_sample6')
+
+row.names(healthyDF) <- healthyDF$Gene.Symbol
+healthyDF <- healthyDF[,-1]
+healthyDF$healthy_mean <- apply(healthyDF,1,mean)
+head(healthyDF)
+```
+
+```{r}
+healthyDF$flu7_mean <- flu7DF$Flu7_mean
+healthyDF$flu1_mean <- flu1DF$Flu1_mean
+healthyDF$flu7_FC <- healthyDF$flu7_mean/healthyDF$healthy_mean
+healthyDF$flu1_FC <- healthyDF$flu1_mean/healthyDF$healthy_mean
+
+healthyDF_flu7 <- healthyDF[order(healthyDF$flu7_FC, decreasing=T),]
+healthyDF_flu1 <- healthyDF[order(healthyDF$flu1_FC, decreasing=T),]
+```
+
+```{r}
+head(healthyDF_flu7,10)
+```
+
+```{r}
+head(healthyDF_flu1,10)
+```
+
+The 10 genes most expressed in flu immunized samples after 7 days are:
+```{r}
+row.names(healthyDF_flu7)[1:10]
+```
+
+The 10 genes most expressed in flu immunized samples after 1 day are:
+```{r}
+row.names(healthyDF_flu1)[1:10]
+```
+
+What is the gene TPPP3 and also the gene DSP?
+```{r, eval=FALSE}
+getSummaries('TPPP3','protein')
+getSummaries('DSP','protein')
+getGeneSummaries('protein')
+```
+```{r}
+protein <- read.csv('proteinGeneSummaries_protein.csv',sep=',',header=T)
+protein[1:2,c(2:3)]
+```
+
+```{r}
+l <- length(healthyDF_flu7$flu7_mean)
+fluDF_20genesOver <- rbind(healthyDF_flu7[1:10,], healthyDF_flu1[1:10,])
+fluDF_20genesOver2 <- fluDF_20genesOver[!duplicated(fluDF_20genesOver),]
+
+fluDF_20genesUnder <- rbind(healthyDF_flu7[(l-9):l,],healthyDF_flu1[(l-9):l,])
+fluDF_20genesUnder2 <- fluDF_20genesUnder[!duplicated(fluDF_20genesUnder),]
+
+fluGenes <- rbind(fluDF_20genesOver2,fluDF_20genesUnder2)
+fluGenes
+```
+
+
+```{r}
+write.csv(fluGenes,'fluGenesUpDown.csv',row.names=TRUE)
+
+```
+
+```{r,eval=FALSE}
+names <- row.names(fluGenes)
+names
+for (i in names){
+  getSummaries(i,'immunity')
+  
+}
+```
+
+```{r}
+imm <- read.csv('./gene scrapes/immunitysummary.csv',sep=',',header=F)
+immH <- read.csv('./gene scrapes/geneHeader_summary_immunity.csv',sep=',',header=T)
+colnames(imm) <- immH$x
+imm
+
+```
+
+
+```{r,eval=FALSE}
+names <- dracula$Gene.Symbol
+
+for (i in names[1:12277]){
+  getSummaries(i,'protein')
+  
+}
+```
+
+
+```{r,eval=FALSE}
+names <- dracula$Gene.Symbol
+#OCLM throws a http 403 error because it is oculomedin by ODR4
+for (i in names[12278:12845]){
+  getSummaries(i,'protein')
+  
+}
+```
+
+```{r}
+bloodProteinSummaries <- read.csv('./gene scrapes/proteinsummary.csv',
+                                  sep=',',header=F, na.strings=c('',' ','NA'),
+                                  stringsAsFactors = F)
+bloodProteinHeader <- read.csv('./gene scrapes/geneHeader_summary_protein.csv',
+                               sep=',',header=T, stringsAsFactors = F,
+                               na.strings=c('',' ','NA'))
+colnames(bloodProteinSummaries) <- bloodProteinHeader$x
+write.csv(bloodProteinSummaries,'bloodSummaries.csv', row.names=FALSE)
+```
+
+Write the other tables to use in our getMeanMedian() for each type.
+```{r}
+write.csv(FluImz_7day,'FluImz_7dayDF.csv', row.names=TRUE)
+write.csv(FluImz_1day,'FluImz_1dayDF.csv', row.names=TRUE)
+write.csv(UL,'UL_funtionDF.csv',row.names=FALSE)
+write.csv(nonUL,'nonUL_functionDF.csv',row.names=FALSE)
+write.csv(healthy_noFluImz,'healthy_noFluImz.csv',row.names=FALSE)
+```
+
