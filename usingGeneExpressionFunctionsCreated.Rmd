@@ -1,0 +1,957 @@
+---
+title: "using Gene Expression Functions Created"
+author: "Janis Corona"
+date: "8/4/2020"
+output: html_document
+---
+
+
+lets source our gene functions for extracting the top 25 genes and also for returning the mean and median fold change values from the Uterine Leiomyoma and the flu immunization samples after 1 and 7 days.
+
+This will read in the tables and the functions from our earlier scripts, geneCardsDataGrab2.Rmd file we made into geneCards.R as a source.
+```{r, warning=FALSE, error=FALSE, message=FALSE}
+source("geneCards.R")
+```
+
+
+```{r, warning=FALSE, error=FALSE, message=FALSE}
+library(rvest)
+library(lubridate)
+library(dplyr)
+
+```
+
+
+I want to look at some other human body network genes involved in process systems and body functions like serous fluid in the body cavities of the pericardium, pleural cavity, and pericardium of the heart, lung, and abdomen/pelvis respectively. Also, the clast and blast cells of the connective tissue that destroy old, damaged tissue or build and repair tissue respectively in the connective tissue. Connective tissue is the ligaments, tendons, fascia, blood, lymph, and cartilage. The blood connective tissue consists of erythrocytes (transport oxygen and carbon dioxide to cells), leukocytes that are the antibodies or white blood cells, the thrombocytes for blood clotting abilities to seal cuts and wounds and prevent bleeding out, and plasma to transport blood in the body.
+
+Lets start with the serous fluid genes.
+
+Serous fluid for UL:
+```{r, eval=FALSE}
+find25genes('serous fluid')
+```
+
+
+```{r, eval=FALSE}
+getProteinGenes('serous fluid')
+```
+
+
+```{r}
+serousGenes <- read.csv('Top25serous-fluids.csv', header=T,sep=',', na.strings=c('',' ','NA'), stringsAsFactors = F)
+serousGenes
+```
+
+
+```{r, eval=FALSE}
+for (i in serousGenes$proteinType){
+  
+  getSummaries(i,'serous fluid')
+}
+```
+
+```{r, eval=FALSE}
+getGeneSummaries('serous fluid')
+```
+
+Lets look at the fold change values of these genes listed as more important in serous fluid.
+```{r}
+getMeanMedian('TP53')
+```
+TP53 is over expressed by 5-41% more in UL samples than non-UL samples approximately. 
+How about in the flu 1 day immunization samples.
+```{r}
+getMeanMedianFlu1('TP53')
+```
+Nothing was available in the 1 day flu immunization samples. It will likely be the same for 7 day unless some other error. They have the exact genes available in that data frame derived.
+
+```{r}
+getMeanMedianFlu7('TP53')
+```
+
+Now lets look at the next listed serous fluid gene, TNF:
+```{r}
+getMeanMedian('TNF')
+```
+There was only 1 gene in the UL data frame and the change was plus or minus 1% change, seems negligible.
+
+Now, the 1 day flu immunizations:
+```{r}
+getMeanMedianFlu1('TNF')
+```
+
+The flu 1 day immunized samples were 8-16 % up regulated of over expressed than the healthy non-immunized flu samples.
+
+Now for the 7 day flu immunized samples:
+```{r}
+getMeanMedianFlu7('TNF')
+```
+The 7 day flu immunized samples showed a drastic increase in TNF gene expression in the flu immunized samples of 37-51% compared to non-immunized healthy samples.
+
+
+The third gene is IL10, lets see the results of this gene in UL samples:
+```{r}
+getMeanMedian('IL10')
+```
+
+The IL10 gene is about 10 % down regulated or under expressed in UL samples compared to non-UL samples.
+
+Now in the 1 day flu immunized samples for IL10:
+```{r}
+getMeanMedianFlu1('IL10')
+```
+This gene IL10 is also down regulated approximately 10% in 1 day flu immunized samples compared to healthy non-immunized.
+
+
+And now for the 7 day flu immunized samples IL10 fold change values:
+```{r}
+getMeanMedianFlu7('IL10')
+```
+IL10 is expressed half as much as the UL and 1 day immunized samples. At about 5% less in 7 day flu immunized samples compared to non-immunized and healthy samples.
+
+
+The fourth gene is BRCA1, this is a cancer gene associated with estrogen and breast cancer. But lets look up the gene summary. Our file of gene summaries was created earlier but not read in, proteinGeneSummaries_serous-fluid.csv.
+```{r}
+serousSumms <- read.csv('proteinGeneSummaries_serous-fluid.csv', sep=',',
+                        header=T, na.strings=c('',' ','NA'),stringsAsFactors = F)
+brca1 <- subset(serousSumms,serousSumms$gene=='BRCA1')
+brca1$EntrezSummary
+```
+
+We can see that this gene is a tumor suppressor. Not necessarily that it is a cancer marker, but is used in breast cancer detection.
+
+Lets see the gene expression of BRCA1 in UL samples:
+```{r}
+getMeanMedian('BRCA1')
+```
+
+BRCA1 is highly expressed to approximately double the non-UL gene expression values. This could mean it is acting greatly on suppressing the tumor along with other network genes sending its production to an increase in the benign UL tumor.
+
+Now lets look at this gene in the flu 1 day immunized samples if it is included in the data.
+```{r}
+getMeanMedianFlu1('BRCA1')
+```
+BRCA1 is included in the flu 1 day immunized samples, and it is under expressed approximately 10% compared to healthy non-immunized samples.
+
+How about BRCA1 in the flu 7 day immunized samples?
+```{r}
+getMeanMedianFlu7('BRCA1')
+```
+In the 7 day flu immunized samples the BRCA1 gene is underexpressed by almost 20%. That is interesting, hope there is no link to increased risk of breast cancer from flu shots.
+
+The next gene is IL1B, an immunity gene:
+```{r}
+serousSumms[5,3]
+```
+
+It seems this interleukin antibody is a pain hypersensitivity gene for inflammation, likely responsible for inflammation and to prevent movement of strains, sprains, and other injuries immediately after they occur. Lets see the gene expression of this gene in UL then flu immunized samples.
+
+IL1B in UL:
+```{r}
+getMeanMedian('IL1B')
+```
+
+This gene IL1B is almost under expressed by 15-33% in UL compared to non-UL samples. Makes sense, as ULs aren't painful but cause painful menstruations in some females.
+
+IL1B in 1 day flu immunized samples:
+```{r}
+getMeanMedianFlu1('IL1B')
+```
+This gene is elevated 6-10 % more in flu immunized samples compared to non-immunized healthy samples after 1 day. This makes sense as it is early in the infection of an antigen and flu is normally associated with body aches and headaches.
+
+
+IL1B in 7 day immunized flu samples.
+```{r}
+getMeanMedianFlu7('IL1B')
+```
+
+Wow! After 7 days, the pain hypersensitivity inflammatory interleukin, IL1B is elevated approximately 40% more in flu immunized samples after 7 days compared to non-immunized and healthy samples.
+
+Our sixth gene related to serous fluid is PIK3CA:
+```{r}
+serousSumms[6,3]
+```
+The gene cards gene summary for Entrez' version says that PIK3CA is a cervical cancer associated oncogene. Lets see this gene expression in UL then flu immunized samples.
+```{r}
+getMeanMedian('PIK3CA')
+```
+Thats reassuring that, PIK3CA is expressed approximately 32-34% less in UL compared to non-UL samples as it is an oncogene that signals cervical cancer as the gene summary says.
+
+PIK3CA in 1 day flu immunized samples:
+```{r}
+getMeanMedianFlu1('PIK3CA')
+```
+In 1 day flu immunized samples PIK3CA is expressed 10-13% less than in healthy non-immunized samples.
+
+PIK3CA in 7 day flu immunized samples:
+```{r}
+getMeanMedianFlu7('PIK3CA')
+
+```
+The cervical cancer gene is also 10-13% less expressed in 7 day flu immunized samples compared to healthy non-immunized.
+
+
+The 7th gene is BRCA2:
+```{r}
+serousSumms[7,3]
+```
+
+The above definition goes into the DNA replication of splicing on exons and the copy mutations of this gene that is an ovarian and breast cancer oncogene. It is a tumor suppressor gene like BRCA1. The Entrez gene summary above says BRCA2 where the exon 11 is a primary culprit in breast cancer for its gene host and recall that exons and introns both make up the DNA in replication but the introns are dropped. The amino acid build is of adenine 70 replicate motif in this specific exon. It is a mutation, because the wild type inherited is selected that causes breast cancer in its host instead of the mix of non breast cancer carrying genes in the host. That is my interpretation based on the summary. Tumors are an abundance of mutations that grow fast and in one location, cancerous or malignant if they spread and mutate other neighboring tissue, benign if they stay local and don't spread. 
+
+So lets see how this BRCA2 gene expression fold change values are in the UL and flu immunized samples compared to their healthy counterparts.
+```{r}
+getMeanMedian('BRCA2')
+```
+So, it looks like the BRCA2, a tumor suppressor, is working in a range of 14% under expressed to 133% over expressed in our UL samples compared to non-UL samples from the above output. There were two of these genes in the array data extracted, with no genotype information attached, but these genes do have different genotypes, hence there being two of these genes in the data. A lot of the genes in this data have more than one genotype the reason for the mean and median fold change values instead of just the fold change value on a one-to-one basis. 
+
+BRCA2 in the 1 day flu immunized samples:
+```{r}
+getMeanMedianFlu1("BRCA2")
+```
+The BRCA2 gene is approximately 10% underexpressed in the 1 day flu immunized samples much like the BRCA1 gene was underexpressed the same approximate value.
+
+
+BRCA2 in the 7 day flu immunized samples:
+```{r}
+getMeanMedianFlu7('BRCA2')
+```
+This gene, BRCA2, is also approximately 10% under expressed in 7 day flu immunized samples thats the same as the 1 day flu immunized and more than the BRCA1 7 day immunized samples that saw a decrease in gene expression of approximately 20%. 
+
+
+The 8th gene is anothe oncogene, KRAS:
+```{r}
+serousSumms[8,3]
+```
+
+Lets see the fold change values of KRAS in UL and flu immunized samples.
+
+KRAS in UL:
+```{r}
+getMeanMedian('KRAS')
+```
+In UL samples the KRAS gene has a range of expression from 5% under to 65% over expressed, with most samples over expressed. That isn't great news, but the Kirsten Ras gene is from the Kirsten Rat Sarcoma Virus studies that found the information on how this protein, KRAS, could turn on and off signaling pathways inside the nucleus for cell differentiation and proliferation. You can read more about this gene at https://en.wikipedia.org/wiki/KRAS.
+
+Lets see how KRAS is expressed in flu immunized samples.
+
+KRAS in 1 day flu immunized samples:
+```{r}
+getMeanMedianFlu1('KRAS')
+```
+
+KRAS is underexpressed approximately 10% in 1 day immunized flu samples compared to non-immunized and healthy samples.
+
+KRAS in 7 day flu immunized samples:
+```{r}
+getMeanMedianFlu7('KRAS')
+```
+In 7 day immunized samples the KRAS oncogene is under expressed approximately 5%.
+
+
+Lets discuss the KRAS gene some more. It is under expressed in immunized blood samples and over expressed up to 65% in UL tumor samples. It is one of the top ten genes returned searching genecards.org for genes associated with 'serous fluid' of the body cavities. The uterus is in the pericardium of the abdomen and pelvis with the other visceral organs. In rats, a mammal like humans obviously different, this KRAS gene is associated with pancreatic and colon cancer. This could be significant to study this gene in UL tissue, and as we all know when some networks slow or get backed up in the body, other diseases could occur. There are some comorbidities associated with UL, if a great number of women with ULs also get pancreatic or colon cancer. Otherwise, there is not. It does make this finding a possible gene target to watch out for in other cancer risks or health risks for females with ULs.
+
+Lets move on to the 9th gene, IFNG:
+```{r}
+serousSumms[9,3]
+```
+
+The gene IFNG is a cytokine, which is a pain inflammatory interleukin. The above description says those with a gene mutation in this gene will be prone to infections. This gene, IFNG, combats infections, so it makes sense that those with autoimmune disorders and mutations in this gene will be more at risk of viral and bacterial infections. 
+
+Lets see how IFNG is expressed in UL samples compared to non-UL samples.
+```{r}
+getMeanMedian('IFNG')
+```
+In the above data, we see that IFNG is over expressed by 5-10% in UL compared to non-UL samples, and that is good, since it fights infections in the body. 
+
+```{r}
+getMeanMedianFlu1('IFNG')
+```
+IFNG is under expressed up to 20% in 1 day flu immunized samples. This makes sense as it is early in the stage of flu virus infection, even though the flu virus is deactivated it will be treated as an antigen.
+
+
+```{r}
+getMeanMedianFlu7('IFNG')
+```
+After 7 days of flu immunizations, the IFNG interleukin gene is increased approximately 10%, which also makes sense as this is the usual time period that symptoms show after infection as 1-2 weeks after infection from common knowledge on flu symptom internet searches that state such information. But https://www.healthline.com/health/how-long-does-the-flu-last says symptoms can show 1-4 days after infection. And the Center for Disease Control (CDC) says that the symptoms can show 1-7 days after becoming sick. Which could mean after being infected or after showing infection signs. More CDC information on this is available at: https://www.cdc.gov/flu/about/disease/spread.htm 
+
+"When Flu Spreads
+People with flu are most contagious in the first three to four days after their illness begins.  Most healthy adults may be able to infect others beginning 1 day before symptoms develop and up to 5 to 7 days after becoming sick. Children and some people with weakened immune systems may  pass the virus for longer than 7 days."-CDC
+
+
+Our 10th serous fluid gene is ERBB2:
+```{r}
+serousSumms[10,3]
+```
+
+ERBB2 seems to be another oncogene that indicated increased expression in breast and ovarian tumors. It encodes a member of the epidermal growth factor receptor family. The epidermis is the skin and mucous linings of the body's organs. Lets see how this gene is expressed in ULs and flu immunized samples.
+
+ERBB2 in UL:
+```{r}
+getMeanMedian('ERBB2')
+```
+The results for ERBB2 in UL tissue are that this gene is approximately 15-60% under expressed in UL compared to non-UL samples. That is reassuring as the Entrez gene summary for ERBB2 stated that over expression of ERBB2 is associated with ovarian and breast tumors as well as cancer.
+
+Now lets see how ERBB2 does in 1 day flu immunized samples:
+```{r}
+getMeanMedianFlu1('ERBB2')
+```
+ERBB2 is also under expressed in the 1 day flu immunized samples by approximately 10-15%.
+
+ERBB2 gene in 7 day flu immunized samples:
+```{r}
+getMeanMedianFlu7('ERBB2')
+```
+ERBB2 is under expressed after 7 days of being immunized with the flu compared to healthy and non-immunized samples. The fold change values are 12-16% less after 7 days of immunizations.
+
+
+We have seen that some of these 10 genes in UL and flu samples are over expressed or under expressed more than 10%. Lets recall those genes dramatically over and under expressed in the UL samples, then the flu samples.
+- UL: 
+          - over expressed genes more than 10%: 
+            - TP53
+            - BRCA1
+            - BRCA2
+            - IFNG
+            - KRAS
+          - under expressed genes by more than 10%:
+            - IL1B
+            - PIK3CA
+            - ERBB2
+- 1 day flu:
+          - over expressed by more than 10%:
+            - TNF
+          - under expressed by more than 10%:
+            - IL10
+            - BRCA1
+            - IL1B
+            - PIK3CA
+            - BRCA2
+            - KRAS
+            - IFNG
+            - ERBB2
+- 7 day flu: 
+          - over expressed by more than 10%:
+            - TNF
+            - IL1B
+          - under expressed by more than 10%:
+            - BRCA1
+            - PIK3CA
+            - ERBB2
+
+Lets make a list of these 25 serous fluid genes and get the fold change values for all of these genes in the UL, 1 day, and 3 day flu immunization data frames.
+```{r}
+serousList <- serousSumms$gene
+serousList
+```
+
+```{r}
+UL$first <- as.character(UL$first)
+
+UL_serous <- subset(UL, UL$first %in% serousList )
+UL_serous <- UL_serous[,c(2:7)]
+colnames(UL_serous)[6] <- 'gene'
+UL_serous <- UL_serous[!duplicated(UL_serous),]
+row.names(UL_serous) <- NULL
+UL_serous
+```
+
+```{r}
+nonUL$first <- as.character(nonUL$first)
+
+nonUL_serous <- subset(nonUL, nonUL$first %in% serousList )
+nonUL_serous <- nonUL_serous[,c(2:7)]
+colnames(nonUL_serous)[6] <- 'gene'
+nonUL_serous <- nonUL_serous[!duplicated(nonUL_serous),]
+row.names(nonUL_serous) <- NULL
+nonUL_serous
+
+```
+Lets add the mean fold change for each gene to each table.
+```{r}
+UL_serous2 <- UL_serous %>% group_by(gene) %>% summarise_at(vars('GSM9093':'GSM9097'), mean)
+names <- UL_serous2$gene
+UL_serous3 <- UL_serous2[,c(2:6)]
+UL_serous3$mean <- apply(UL_serous3,1,mean)
+colnames(UL_serous3) <- paste('UL_',colnames(UL_serous3), sep='')
+UL_serous4 <- as.data.frame(UL_serous3)
+row.names(UL_serous4) <- names
+UL_serous4
+```
+
+```{r}
+nonUL_serous2 <- nonUL_serous %>% group_by(gene) %>% summarise_at(vars('GSM9098':'GSM9102'), mean)
+names <- nonUL_serous2$gene
+nonUL_serous3 <- nonUL_serous2[,c(2:6)]
+nonUL_serous3$mean <- apply(nonUL_serous3,1,mean)
+colnames(nonUL_serous3) <- paste('nonUL_',colnames(nonUL_serous3), sep='')
+nonUL_serous4 <- as.data.frame(nonUL_serous3)
+row.names(nonUL_serous4) <- names
+nonUL_serous4
+```
+
+```{r}
+UL_df <- cbind(UL_serous4, nonUL_serous4)
+UL_df <- UL_df[,c(1:5,7:11,6,12)]
+UL_df$UL_foldChange <- UL_df$UL_mean/UL_df$nonUL_mean
+UL_df
+```
+
+Lets combine the gene summaries to our UL data.
+```{r}
+UL_df$gene <- row.names(UL_df)
+ULDF <- merge(serousSumms,UL_df, by.x='gene', by.y='gene')
+ULDF
+```
+
+
+
+Lets do the same for the flu data.
+```{r}
+Flu1 <- FluImz_1day %>% filter(FluImz_1day$Gene.Symbol %in% serousList)
+Flu1_df <- Flu1 %>% group_by(Gene.Symbol) %>% summarise_at(vars('Flu.Immunized.Only.Day.1':'Flu.Immunized.Only.Day.1.2'),mean)
+Flu1_df
+```
+
+```{r}
+Flu7 <- FluImz_7day %>% filter(FluImz_7day$Gene.Symbol %in% serousList)
+Flu7_df <- Flu7 %>% group_by(Gene.Symbol) %>% summarise_at(vars('Flu.Immunized.Only.Day.7':'Flu.Immunized.Only.Day.7.2'),mean)
+Flu7_df
+```
+
+```{r}
+nonImm <- healthy_noFluImz %>% filter(healthy_noFluImz$Gene.Symbol %in% serousList)
+nonImm_df <- nonImm %>% group_by(Gene.Symbol) %>% summarise_at(vars('Flu.non.immunized.healthy':'Flu.non.immunized.healthy.5'),mean)
+nonImm
+```
+
+
+```{r}
+Flu1_df <- as.data.frame(Flu1_df)
+row.names(Flu1_df) <- Flu1_df$Gene.Symbol
+
+Flu7_df <- as.data.frame(Flu7_df)
+row.names(Flu7_df) <- Flu7_df$Gene.Symbol
+
+NonImm_df <- as.data.frame(nonImm)
+row.names(NonImm_df) <- nonImm$Gene.Symbol
+
+Flu1_DF <- Flu1_df[,c(2:4)]
+Flu7_DF <- Flu7_df[,c(2:4)]
+NonImm_df <- NonImm_df[,c(c(2:7))]
+
+colnames(Flu1_DF) <- c('flu_1day_sample1','flu_1day_sample2','flu_1day_sample3')
+colnames(Flu7_DF) <- c('flu_7day_sample1','flu_7day_sample2','flu_7day_sample3')
+colnames(NonImm_df) <- c('nonImmunized_sample1',
+                         'nonImmunized_sample2',
+                         'nonImmunized_sample3',
+                         'nonImmunized_sample4',
+                         'nonImmunized_sample5',
+                         'nonImmunized_sample6')
+
+Flu1_DF$flu_1day_mean <- apply(Flu1_DF,1,mean)
+Flu7_DF$flu_7day_mean <- apply(Flu7_DF,1,mean)
+NonImm_df$nonImm_healthy_mean <- apply(NonImm_df,1,mean)
+
+Flu1_DF$gene <- row.names(Flu1_DF)
+Flu7_DF$gene <- row.names(Flu7_DF)
+NonImm_df$gene <- row.names(NonImm_df)
+
+```
+
+
+```{r}
+fludf <- merge(Flu1_DF, Flu7_DF, by.x='gene', by.y='gene')
+FLUDF <- merge(fludf,NonImm_df, by.x='gene', by.y='gene')
+```
+
+
+```{r}
+FLU_UL_DF <- merge(ULDF,FLUDF, by.x='gene', by.y='gene')
+colnames(FLU_UL_DF)
+```
+
+
+```{r}
+Flu_UL_DF <- FLU_UL_DF[,c(1:19,20:22,24:26,28:33,23,27,34)]
+Flu_UL_DF$flu_1day_foldChange <- Flu_UL_DF$flu_1day_mean/Flu_UL_DF$nonImm_healthy_mean
+
+Flu_UL_DF$flu_7day_foldChange <- Flu_UL_DF$flu_7day_mean/Flu_UL_DF$nonImm_healthy_mean
+
+head(Flu_UL_DF)
+```
+
+
+```{r,eval=FALSE}
+write.csv(Flu_UL_DF,'Flu_UL_df.csv', row.names=FALSE)
+write.csv(ULDF, 'ULDF.csv', row.names=FALSE)
+write.csv(FLUDF, 'FLUDF.csv', row.names=FALSE)
+```
+
+I created those tables above to create visualizations in Tableau separately.
+
+
+***
+
+We have gone through 10 of the 25 genes we gathered from genecards.org on serous fluid genes. We still want to look at the connective tissue genes, like the clast and blast cells and the blood genes. Lets skip the other 15 genes and look at the genes that are in the clast and blast genes and ertyrocytes and thrombocytes. We have seen many leukocytes like the interleukin genes above.
+
+```{r,eval=FALSE}
+find25genes('clast')
+```
+
+
+```{r,eval=FALSE}
+getProteinGenes('clast')
+```
+
+
+```{r,eval=FALSE}
+clast <- read.csv('Top25clasts.csv')
+for (i in clast$proteinType){
+  getSummaries(i,'clast')
+}
+```
+
+
+```{r,eval=FALSE}
+getGeneSummaries('clast')
+```
+
+```{r}
+clastSumms <- read.csv('proteinGeneSummaries_clast.csv')
+```
+
+
+Lets now get the Entrez summary of the first clast gene. These genes are associated with clast cells that break up damaged scar tissue and waste in the body so that blast cells can build and repair the cells.
+
+The first cell is CTSK.
+```{r}
+clastSumms[1,3]
+```
+
+The above Entrez summary says this gene clast, CTSK, is involved in bone remodeling and resorption. It suggests this gene is responsible for breast cancer invasiveness because there are a significant number of cases this protein was found in that tissue. If the significance level is 5% then it is in 5% of cases, but the level of significance wasn't stated so it could be 5% or even more than 50% of cases. Also short height and osteosclerosis which is bone hardening and higher than normal bone density. Similar to artherosclerosis or artery hardening. 
+
+Lets see how the UL and flu immunizations' gene expression of CTSK behave compared to healthy samples by looking at the fold change ratio.
+
+UL fold change to healthy of CTSK:
+```{r}
+getMeanMedian('CTSK')
+```
+
+There is an over expression of this osteo clast gene, CTSK, in UL compared to non-UL samples by 15-24%.
+
+Now for the Flu immunizations after 1 day samples of CTSK:
+```{r}
+getMeanMedianFlu1('CTSK')
+```
+
+There is not much change in the CTSK osteoclast gene in the flu immunized samples after 1 day compared to non-immunized and healthy samples.However, the change is in the negative direction or shows a decrease or under expression in CTSK of 1.1-1.4%
+
+How about the flu immunized samples after 7 days for CTSK fold changes?
+```{r}
+getMeanMedianFlu7('CTSK')
+```
+
+There is also not much change in the flu immunized samples after 7 days of being immunized, but the change is in the elevated direction by .7-2% increased in CTSK.
+
+
+
+The next clast gene is ACP5, lets look at the uniprotkb gene summary instead of the entrez summary:
+```{r}
+clastSumms[2,5]
+```
+
+This clast gene, ACP5, is increased in certain diseases like Lymphoma and Leukemia. Lets see how it behaves in UL and flu immunized samples.
+
+ACP5 in UL:
+```{r}
+getMeanMedian('ACP5')
+```
+
+In UL, the ACP5 gene is increased in gene expression from 3.2-11.9 %.
+
+ACP5 in Flu immunized samples after 1 day:
+```{r}
+getMeanMedianFlu1('ACP5')
+```
+
+In flu immunized samples after 1 day, the gene expression is slightly decreased in ACP5 by 2% to an increase of 1.3%, not by much change.
+
+
+Now for the flu immunized samples after 7 days:
+```{r}
+getMeanMedianFlu7('ACP5')
+```
+
+After 7 days, ACP5 is slightly increased in gene expression by 2.9-3.2%
+
+
+The third of our six clast associated genes is IGF1, lets get the uniprotkb summary:
+```{r}
+clastSumms[3,5]
+```
+
+The above gene summary of IGF1 sounds like it provides the energy needed to convert calories from glucose for clasts to have energy to work.
+
+Lets see how IGF1 behaves in UL samples:
+```{r}
+getMeanMedian('IGF1')
+```
+The UL fold change values are significantly shown to increase in UL compared to non-UL samples for IGF1 by 14-83%, with an approximate average increase of 40%.The UL is using this clast gene energy source or requesting more of this clast gene to supply it the energy it needs.
+
+
+In flu 1 day immunized for IGF1:
+```{r}
+getMeanMedianFlu1('IGF2')
+```
+This gene isn't in the flu sampls so no point in trying the 7 day immunized subset for IGF1.
+
+
+
+The next gene, or fourth gene of six clast genes is IGFBP2, lets use the Entrez gene summary.
+```{r}
+clastSumms[4,3]
+```
+
+The summary above says that IGFBP2 is associated with many tumors and promotes cell growth of several ligands.
+
+Lets see how IGFBP2 behaves in UL:
+```{r}
+getMeanMedian('IGFBP2')
+```
+In UL samples the IGFBP2 clast gene is under expressed 11-54%, which indicates that though it is responsible for many tumors in the body, benign UL are not tumors that grow using this clast gene. Also, lets look at the genecards summary instead of the entrez summary and we will see that IGFBP2 is also an indicative marker for malignant or cancerous ovarian cysts.
+```{r}
+clastSumms[4,4]
+```
+So, this also reaffirms the benign nature of ULs or uterine tumors, and adds that they are not related to ovarian cancer.
+
+
+IGFBP2 in flu 1 day:
+```{r}
+getMeanMedianFlu1('IGFBP2')
+```
+
+After one day of flu immunizations the fold change ranges from -2% to 7%. Not a huge increase or decrease. Lets compare these values to the 7 day immunized flu samples.
+
+IGFBP2 in flu 7 days:
+```{r}
+getMeanMedianFlu7('IGFBP2')
+```
+
+After 7 days of flu immunizations, there is no increase in IGFBP2 as there was after one day. There is a decrease in gene expression of 5-11%. This could mean there is no link to it feeding any growth needs for the body to clast cells, or not a need for energy in breaking down cellular waste after 7 days. It could also mean it isn't significant to any changes that take place in the body fighting a deactivated flu antigen.
+
+
+Our fifth clast gene is IGF2 with an Entrez gene summary of:
+```{r}
+clastSumms[5,3]
+```
+This gene is also an energy growth gene, but it is inherited from the father's side of the genetic code or DNA of a person. The UniprotKB summary says this gene is related to fetal growth, and the genecards summary says it is on the same pathway network as cell death or apoptosis regulation. Lets see how this gene behaves in UL for IGF2.
+
+IGF2 in UL:
+```{r}
+getMeanMedian('IGF2')
+```
+That is interesting that this gene with 3 different summaries for paternal inheritance, fetal growth, and cell death regulation for IGF2 displays fold change values of heightened increased values compared to non-UL samples. The increase or over expression is anywhere from 4-12 times the non-UL values or 400-1200% increased in UL. 
+
+IGF2 in flu 1 day:
+```{r}
+getMeanMedianFlu1('IGF2')
+```
+There is no IGF2 gene entry in our flu data, so there won't be results for the 7 days immunized samples either.
+
+
+Our last clast gene returned is IGFBP5, with an Entrez gene summary:
+```{r}
+clastSumms[6,3]
+```
+
+The IGFBP5 gene cards summary:
+```{r}
+clastSumms[6,4]
+```
+
+
+
+The IGFBP5 uniprotkb summary:
+```{r}
+clastSumms[6,5]
+```
+
+The gene summaries for Entrez and gene cards is the same, for associated diseases of bone disease related to kidney disease and growth factor disease. The related gene pathways involve muscle contraction and relaxation and the pathway in cancer patients that cause their bodies to digest their muscles (autophagy) and senescing or cell death due to aging.
+
+
+Lets see how IGFBP5 gene expression behaves in UL:
+```{r}
+getMeanMedian('IGFBP5')
+```
+We can see an increase in gene expression of this clast gene, IGFBP5, in UL by 31-225% in UL compared to non-UL samples. This is significant and shows IGFBP5 has some role in UL pathogenesis or even growth. The uniprotkb gene summary says this gene can inhibit or stimulate the half life of the insulin growth factors and also alter the interactions on the cell surface receptors with IGFs or insulin growth factors. 
+
+
+Lets compare the flu immunized samples for IGFBP5.
+```{r}
+getMeanMedianFlu1('IGFBP5')
+```
+
+In flu immunized samples after 1 day, this gene IGFBP5 is under expressed by 6-7%.
+
+
+Flu 7 days immunized:
+```{r}
+getMeanMedianFlu7('IGFBP5')
+```
+After 7 days of being immunized for the flu, IGFBP5 is under expressed by about 10%, that is less gene expression thand after 1 day. In fact the gene expression went from 5% under to 10% under in 7 days. This gene could possibly be blocked by other immunology genes that fight the flu virus and would possibly interfere with the process, so it is down regulated. 
+
+
+
+
+We have looked at the clast cells, six to be exact, in UL and immunized flu samples in 1 day and a week. Lets look at the blast cell genes now. These are the build and repair genes.
+
+```{r,eval=FALSE}
+find25genes('blast')
+```
+
+```{r,eval=FALSE}
+getProteinGenes('blast')
+```
+
+For our blast genes we do have at least 25 genes returned, unlike our clast genes with only 6 genes returned.
+
+Lets look at the gene summaries for these genes, or scrape them from the web to look at as we move through each blast gene in our analysis.
+```{r}
+blast <- read.csv('Top25blasts.csv')
+```
+
+
+```{r,eval=FALSE}
+for (i in blast$proteinType){
+  getSummaries(i,'blast')
+}
+```
+
+```{r,eval=FALSE}
+getGeneSummaries('blast')
+```
+```{r}
+blastSumms <- read.csv('proteinGeneSummaries_blast.csv')
+```
+
+The first gene is FLT3. I went over many of these 25 blast gene summaries and saw a majority of them are involved in hematopoeisis or blood cell formation and mutations in some genes are involved in leukemia and some other blood cancers.
+Also, in this list of 25 blast genes, TP53 and KRAs are included. We saw these genes earlier in our serous fluid list of 25 genes in the top 10 of that list. We won't go through all of these 25 genes, but we will go over a few of them and their summaries.
+The Entrez FLT3 gene summary:
+```{r}
+blastSumms[1,3]
+```
+
+FLT3 in UL:
+```{r}
+getMeanMedian('FLT3')
+```
+There is an underexpression of FLT3 in UL by 2-11%.
+
+FLT3 in flu 1 day:
+```{r}
+getMeanMedianFlu1('FLT3')
+```
+No results for FLT3 in the flu data.
+
+The 2nd gene is KIT in our list of blast genes with an Entrez gene summary of:
+```{r}
+blastSumms[2,3]
+```
+
+I looked up a few terms with bing and found that gametogenesis is the process of cell splitting in creating gametes in meiosis and melanogenesis is the creation of melanin used in blocking sun rays and darker skin pigment and hair and iris of the eye pigmentation. This gene, KIT is said to phosphorylate many proteins involved in those two processes as well as blood cell formation, stem cell maintenance and cell migration and function and mast cell development. Mast cells carry basophils that are used in releasing histamine in immune responses to allergens and for inflamation in connective tissues. Phosphorylation is a way for cells to respond to external signals and stimuli and activate proteins or break them down structurally by residue or amino acid binding.
+
+KIT blast gene in UL:
+```{r}
+getMeanMedian('KIT')
+```
+This gene is more than halfed in gene expression in UL compared to non-UL samples by 39-46%. The blast gene, KIT, doesn't seem to be involved in ULs and this implies ULs do not use melanin, histamine, need meiosis, stem cell maintenance, or blood cell formation. Makes sense as those are created in the bone marrow typically.
+
+KIT in flu 1 day:
+```{r}
+getMeanMedianFlu1('KIT')
+```
+
+The blast gene KIT is about 9% under expressed in flu immunized samples after 1 day.
+
+KIT blast gene in flu 7 days:
+```{r}
+getMeanMedianFlu7('KIT')
+```
+
+The blast gene KIT is bout 6-8% under expressed in flu immunized samples after 7 days. Seems that the process to phosphorylate the inflammation and allergic immune response isn't needed in flu immunized samples after 7 days.
+
+
+Lets jump through the list of blast cells to some other genes that don't involve blood cell creation or hematopeoisis. Lets jump to the 10th blast gene, ASXL1.
+```{r}
+blastSumms[10,3]
+```
+
+The above Entrez gene summary for ASXL1 says it is a protein that could change the chromatin of localized areas and enhance transcription of certain genes and suppress others. DNA is wrapped tightly in chromatin and genes for proteins are mapped to certain chromosomes and expressed when the body needs them. This gene has mutations that are related to the blood cancer myelomonocytic leukemia.
+
+```{r}
+getMeanMedian('ASXL1')
+```
+
+The blast gene ASXL1 is between 11-19% under expressed in UL tissue. 
+
+ASXL1 in flu 1 day:
+```{r}
+getMeanMedianFlu1('ASXL1')
+```
+The flu 1 day samples show an under expression of ASXL1 by 5-7%.
+
+ASXL1 in flu 7 day samples:
+```{r}
+getMeanMedianFlu7('ASXL1')
+```
+
+In the flu 7 day immunized samples, ASXL1 is also under expressed, but from 5-6%.
+
+
+Lets skip the remaining blast cells as they appear for the most part to be related to diseases unrelated to flu or ULs. But lets make a table of the clast and blast cells with their respective protein type of clast or blast, and add the mean and fold change values for these genes from the UL and flu immuzined data for 1 and 7 days.
+```{r}
+blastList <- blastSumms$gene
+clastList <- clastSumms$gene
+```
+
+
+```{r}
+blast_UL_df <- subset(UL, UL$Gene.Symbol %in% blastList)
+blast_nonUL_df <- subset(nonUL, nonUL$Gene.Symbol %in% blastList)
+clast_UL_df <- subset(UL, UL$Gene.Symbol %in% clastList)
+clast_nonUL_df <- subset(nonUL, nonUL$Gene.Symbol %in% clastList)
+```
+
+```{r}
+blast_UL_df_2 <- blast_UL_df %>% group_by(Gene.Symbol) %>% summarise_at(vars('GSM9093':'GSM9097'),mean)
+blast_nonUL_df_2 <- blast_nonUL_df %>% group_by(Gene.Symbol) %>% summarise_at(vars('GSM9098':'GSM9102'),mean)
+clast_UL_df_2 <- clast_UL_df %>% group_by(Gene.Symbol) %>% summarise_at(vars('GSM9093':'GSM9097'),mean)
+clast_nonUL_df_2 <- clast_nonUL_df %>% group_by(Gene.Symbol) %>% summarise_at(vars('GSM9098':'GSM9102'),mean)
+
+```
+
+
+```{r}
+blast_UL_df_2$mean <- apply(blast_UL_df_2[,2:6], 1, mean)
+blast_nonUL_df_2$mean <- apply(blast_nonUL_df_2[,2:6],1,mean)
+clast_UL_df_2$mean <- apply(clast_UL_df_2[,2:6],1,mean)
+clast_nonUL_df_2$mean <- apply(clast_nonUL_df_2[,2:6],1,mean)
+
+```
+
+```{r}
+colnames(blast_UL_df_2) <- c('gene','UL_1','UL_2','UL_3','UL_4','UL_5','UL_mean')
+colnames(blast_nonUL_df_2) <- c('gene','nonUL_1','nonUL_2','nonUL_3','nonUL_4','nonUL_5','nonUL_mean')
+
+colnames(clast_UL_df_2) <- c('gene','UL_1','UL_2','UL_3','UL_4','UL_5','UL_mean')
+colnames(clast_nonUL_df_2) <- c('gene','nonUL_1','nonUL_2','nonUL_3','nonUL_4','nonUL_5','nonUL_mean')
+
+```
+
+
+```{r}
+blast_UL_df_3 <- merge(blast_UL_df_2, blast_nonUL_df_2, by.x='gene',
+                       by.y='gene')
+blast_UL_df_4 <- blast_UL_df_3[,c(1,2:6,8:12,7,13)]
+blast_UL_df_4$UL_foldchange <- blast_UL_df_3$UL_mean/blast_UL_df_3$nonUL_mean
+colnames(blast_UL_df_4)
+```
+
+
+```{r}
+clast_UL_df_3 <- merge(clast_UL_df_2, clast_nonUL_df_2, by.x='gene',by.y='gene')
+clast_UL_df_4 <- clast_UL_df_3[,c(1,2:6,8:12,7,13)]
+clast_UL_df_4$UL_foldchange <- clast_UL_df_4$UL_mean/clast_UL_df_4$nonUL_mean
+colnames(clast_UL_df_4)
+```
+
+```{r}
+row.names(clast_UL_df_4) <- NULL
+row.names(blast_UL_df_4) <- NULL
+
+clastBlast <- rbind(clast_UL_df_4,blast_UL_df_4)
+head(clastBlast, 10)
+```
+
+
+```{r}
+clastBlastSumm <- rbind(blastSumms,clastSumms)
+clastBlast_DF <- merge(clastBlastSumm,clastBlast, by.x='gene', by.y='gene')
+clastBlast_DF
+```
+
+```{r}
+write.csv(clastBlast_DF,'clastBlastSumm.csv',row.names=FALSE)
+```
+
+Lets make the flu immunization data tables now.
+```{r}
+clastFlu1 <- subset(FluImz_1day, FluImz_1day$Gene.Symbol %in% clastList)
+clastFlu7 <- subset(FluImz_7day, FluImz_7day$Gene.Symbol %in% clastList)
+blastFlu1 <- subset(FluImz_1day, FluImz_1day$Gene.Symbol %in% blastList)
+blastFlu7 <- subset(FluImz_7day, FluImz_7day$Gene.Symbol %in% blastList)
+nonImzHealthy_clast <- subset(healthy_noFluImz, healthy_noFluImz$Gene.Symbol %in%
+                                clastList)
+nonImzHealthy_blast <- subset(healthy_noFluImz, healthy_noFluImz$Gene.Symbol %in%
+                                blastList)
+nonImz_blastClast <- rbind(nonImzHealthy_blast,nonImzHealthy_clast)
+flu1_blastClast <- rbind(blastFlu1,clastFlu1)
+flu7_blastClast <- rbind(blastFlu7, clastFlu7)
+
+```
+
+```{r}
+nonImz_blastClast_2 <- nonImz_blastClast %>% group_by(Gene.Symbol) %>% 
+  summarise_at(vars('Flu.non.immunized.healthy':'Flu.non.immunized.healthy.5'),mean)
+flu1_blastClast_2 <- flu1_blastClast %>% group_by(Gene.Symbol) %>% 
+  summarise_at(vars('Flu.Immunized.Only.Day.1':'Flu.Immunized.Only.Day.1.2'),mean)
+flu7_blastClast_2 <- flu7_blastClast %>% group_by(Gene.Symbol) %>%
+  summarise_at(vars('Flu.Immunized.Only.Day.7':'Flu.Immunized.Only.Day.7.2'),mean)
+
+```
+
+
+```{r}
+nonImz_blastClast_2$nonImmz_mean <- apply(nonImz_blastClast_2[,2:7],1,mean)
+flu1_blastClast_2$fluImz_1day_mean <- apply(flu1_blastClast_2[2:4],1,mean)
+flu7_blastClast_2$fluImz_7day_mean <- apply(flu7_blastClast_2[2:4],1,mean)
+```
+
+
+```{r}
+flu7_blastClast_3 <- merge(nonImz_blastClast_2,flu7_blastClast_2, by.x='Gene.Symbol',
+                           by.y='Gene.Symbol')
+FLU_blastClast <- merge(flu7_blastClast_3,flu1_blastClast_2, by.x='Gene.Symbol',
+                           by.y='Gene.Symbol')
+```
+
+```{r}
+FLU_blastClast2 <- FLU_blastClast[,c(1:7,9:11,13:15,8,12,16)]
+FLU_blastClast2$Flu1_foldchange <- FLU_blastClast2$fluImz_1day_mean/FLU_blastClast2$nonImmz_mean
+FLU_blastClast2$Flu7_foldchange <- FLU_blastClast2$fluImz_7day_mean/FLU_blastClast2$nonImmz_mean
+colnames(FLU_blastClast2)[1] <- 'gene'
+colnames(FLU_blastClast2)
+```
+
+
+```{r}
+FLU_blastClast3 <- merge(clastBlastSumm, FLU_blastClast2, by.x='gene', by.y='gene')
+colnames(FLU_blastClast3) <- gsub('.Only.','',colnames(FLU_blastClast3))
+```
+
+```{r}
+write.csv(FLU_blastClast3,'blastClast_Flu.csv', row.names=FALSE)
+```
+
+Those tables will be used in Tableau to chart results and make it easier to interpret these genes in the blast and clast cells in uterine leiomyomas and in flu immunized samples.
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```

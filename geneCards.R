@@ -25,10 +25,10 @@ bloodFluSummaries <- read.csv('bloodSummaries.csv', sep=',',
   
 FluImz_7day <- read.csv('FluImz_7dayDF.csv',sep=',',header=TRUE,
                         na.strings=c('',' ','NA'),
-                        stringsAsFactors=FALSE,rownames=1)
+                        stringsAsFactors=FALSE,row.names=1)
 FluImz_1day <- read.csv('FluImz_1dayDF.csv',sep=',',header=TRUE,
                         na.strings=c('',' ','NA'),
-                        stringsAsFactors=FALSE,rownames=1)
+                        stringsAsFactors=FALSE,row.names=1)
 healthy_noFluImz <- read.csv('healthy_noFluImz.csv',sep=',',header=TRUE,
                              na.strings=c('',' ','NA'),
                              stringsAsFactors=FALSE)
@@ -343,10 +343,10 @@ getMeanMedian <- function(gene){
 
 FluImz_7day <- read.csv('FluImz_7dayDF.csv',sep=',',header=TRUE,
                         na.strings=c('',' ','NA'),
-                        stringsAsFactors=FALSE,rownames=1)
+                        stringsAsFactors=FALSE,row.names=1)
 FluImz_1day <- read.csv('FluImz_1dayDF.csv',sep=',',header=TRUE,
                         na.strings=c('',' ','NA'),
-                        stringsAsFactors=FALSE,rownames=1)
+                        stringsAsFactors=FALSE,row.names=1)
 healthy_noFluImz <- read.csv('healthy_noFluImz.csv',sep=',',header=TRUE,
                              na.strings=c('',' ','NA'),
                              stringsAsFactors=FALSE)
